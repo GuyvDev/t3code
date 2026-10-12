@@ -782,8 +782,8 @@ describe("ChatMarkdown file option chips", () => {
     );
     const nestedLinkText = nestedLinkHtml.replace(/<[^>]+>/g, "");
 
-    expect(malformedHtml).toContain(
-      "<li>Bad :codex-file-citation{purpose=&quot;output&quot;}</li>",
+    expect(malformedHtml).toMatch(
+      /<li\b[^>]*>Bad :codex-file-citation\{purpose=&quot;output&quot;\}<\/li>/,
     );
     expect(nestedLinkText).toContain(
       "Bad :codex-file-citation{path=&quot;/tmp/project/report.xlsx&quot;}",
@@ -872,15 +872,20 @@ describe("ChatMarkdown heading levels", () => {
       />,
     );
 
-    expect(html).toContain('<h1 id="user-content-top" aria-level="4">Top</h1>');
-    expect(html).toContain('<h2 id="user-content-section" aria-level="5">Section</h2>');
-    expect(html).toContain('<h6 id="user-content-fine-print" aria-level="6">Fine print</h6>');
+    expect(html).toMatch(/<h1\b[^>]*id="user-content-top"[^>]*aria-level="4"[^>]*>Top<\/h1>/);
+    expect(html).toMatch(
+      /<h2\b[^>]*id="user-content-section"[^>]*aria-level="5"[^>]*>Section<\/h2>/,
+    );
+    expect(html).toMatch(
+      /<h6\b[^>]*id="user-content-fine-print"[^>]*aria-level="6"[^>]*>Fine print<\/h6>/,
+    );
   });
 
   it("leaves heading levels alone when the markdown is not nested", () => {
     const html = renderToStaticMarkup(<ChatMarkdown cwd="/tmp/project" text="# Top" />);
 
-    expect(html).toContain('<h1 id="user-content-top">Top</h1>');
+    expect(html).toMatch(/<h1\b[^>]*id="user-content-top"[^>]*>Top<\/h1>/);
+    expect(html).not.toContain("aria-level=");
   });
 });
 

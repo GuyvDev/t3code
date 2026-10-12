@@ -1,3 +1,4 @@
+import { ComposerTextDirectionExtension } from "./composerTextDirection";
 import { formatProviderSkillDisplayName } from "@t3tools/shared/inlineSkills";
 import { Extension, InputRule, Node, wrappingInputRule, type JSONContent } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
@@ -1042,6 +1043,7 @@ function ComposerPromptEditorTiptapInner(props: ComposerPromptEditorProps) {
   const editor = useEditor(
     {
       extensions: [
+        ComposerTextDirectionExtension,
         StarterKit.configure({
           blockquote: false,
           bulletList: false,

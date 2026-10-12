@@ -1,3 +1,4 @@
+import { FILE_TEXT_DIRECTION_CSS } from "./fileTextDirection";
 import type { ReactNode } from "react";
 
 import { Spinner } from "~/components/ui/spinner";
@@ -20,6 +21,7 @@ export const FILE_LINK_REVEAL_ATTRIBUTE = "data-file-link-reveal";
 
 export const FILE_LINK_REVEAL_UNSAFE_CSS = `
   ${DIFF_SURFACE_THEME_UNSAFE_CSS}
+  ${FILE_TEXT_DIRECTION_CSS}
 
   diffs-container {
     --diffs-bg: var(--code-background, var(--background)) !important;

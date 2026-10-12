@@ -1,3 +1,4 @@
+import { getTextDirection } from "~/lib/textDirection";
 import { ThreadFindTimelineContext } from "./ThreadFindProvider";
 import { shouldPreserveAssistantLineBreaks } from "@t3tools/shared/markdownPipeline";
 import { MarkdownFindContext, useFindRevealRef } from "./markdownFindContext";
@@ -4919,7 +4920,11 @@ function UserMessageReviewCommentCard({ comment }: { comment: ReviewCommentConte
         </div>
       </div>
       {comment.text.length > 0 && (
-        <div className="whitespace-pre-wrap wrap-break-word text-sm">
+        <div
+          dir={getTextDirection(comment.text)}
+          data-text-direction=""
+          className="whitespace-pre-wrap wrap-break-word text-sm"
+        >
           <SkillInlineText text={comment.text} skills={ctx.skills} />
         </div>
       )}

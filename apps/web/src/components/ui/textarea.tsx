@@ -5,6 +5,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import type * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { useTextDirection } from "~/hooks/useTextDirection";
 
 type TextareaProps = React.ComponentProps<"textarea"> & {
   size?: "sm" | "default" | "lg" | number;
@@ -12,6 +13,7 @@ type TextareaProps = React.ComponentProps<"textarea"> & {
 };
 
 function Textarea({ className, size = "default", unstyled = false, ...props }: TextareaProps) {
+  const directionProps = useTextDirection<HTMLTextAreaElement>(props);
   return (
     <span
       className={
@@ -35,7 +37,14 @@ function Textarea({ className, size = "default", unstyled = false, ...props }: T
               size === "lg" && "min-h-18.5 py-[calc(--spacing(2)-1px)] max-sm:min-h-21.5",
             )}
             data-slot="textarea"
-            {...mergeProps(defaultProps, props)}
+            {...mergeProps(defaultProps, {
+              ...props,
+              ...directionProps,
+              onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                directionProps.onChange(event);
+                props.onChange?.(event);
+              },
+            })}
           />
         )}
       />
