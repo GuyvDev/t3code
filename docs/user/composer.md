@@ -297,6 +297,10 @@ files show the copy that was attached to the message.
 
 ## Attached files
 
+On web and desktop, Markdown files can show source and rendered preview together.
+Edits to a workspace file update the preview as you type. The workspace split-view
+preference is remembered between files; attachment source remains read-only.
+
 Select a file chip in your draft or a sent message to preview it. Code and JSON use syntax
 highlighting; Markdown, HTML, CSV, and TSV offer rendered and raw views. Audio files have
 playback controls. Large text files show a limited preview; save the file to read it in full.

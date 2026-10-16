@@ -3,7 +3,14 @@ import type { EnvironmentId, ScopedThreadRef } from "@t3tools/contracts";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
 import { readFilePreviewResponse } from "@t3tools/client-runtime/file-preview";
 import { filePreviewKind, FILE_TEXT_PREVIEW_MAX_BYTES } from "@t3tools/shared/filePreview";
-import { ChevronRightIcon, DownloadIcon, Trash2Icon, WrapTextIcon, XIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  Columns2,
+  DownloadIcon,
+  Trash2Icon,
+  WrapTextIcon,
+  XIcon,
+} from "lucide-react";
 import { Check, Code2, Copy, Eye, Table2 } from "lucide";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
@@ -89,6 +96,7 @@ export function AttachmentFilePreview(props: {
   const [localUrl, setLocalUrl] = useState<string | null>(null);
   const [remoteUrl, setRemoteUrl] = useState<string | null>(null);
   const [rendered, setRendered] = useState(true);
+  const [splitMarkdown, setSplitMarkdown] = useState(false);
   const [revision, setRevision] = useState(0);
   const [content, setContent] = useState<{ text: string; truncated: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +176,7 @@ export function AttachmentFilePreview(props: {
     needsText &&
     content !== null &&
     !(delimiter && rendered) &&
-    !(kind === "markdown" && rendered);
+    !(kind === "markdown" && rendered && !splitMarkdown);
 
   const save = () => {
     setSaving(true);
@@ -219,9 +227,37 @@ export function AttachmentFilePreview(props: {
     delimiter && rendered ? (
       <DelimitedTablePreview name={props.name} text={content.text} delimiter={delimiter} />
     ) : kind === "markdown" && rendered ? (
-      <ScrollArea className="min-h-0 flex-1">
-        <ChatMarkdown text={content.text} cwd={undefined} className="mx-auto max-w-4xl px-6 py-5" />
-      </ScrollArea>
+      <div className="@container/markdown flex min-h-0 flex-1">
+        <div
+          className={cn(
+            "grid min-h-0 min-w-0 flex-1",
+            splitMarkdown
+              ? "grid-rows-2 @min-[48rem]/markdown:grid-cols-2 @min-[48rem]/markdown:grid-rows-1"
+              : "grid-cols-1 grid-rows-1",
+          )}
+        >
+          {splitMarkdown ? (
+            <section
+              aria-label="Markdown source"
+              className="flex min-h-0 min-w-0 flex-col overflow-hidden border-b @min-[48rem]/markdown:border-r @min-[48rem]/markdown:border-b-0"
+            >
+              <ReadOnlySourcePreview name={props.name} text={content.text} />
+            </section>
+          ) : null}
+          <section
+            aria-label="Rendered markdown"
+            className="flex min-h-0 min-w-0 flex-col overflow-hidden"
+          >
+            <ScrollArea className="min-h-0 flex-1">
+              <ChatMarkdown
+                text={content.text}
+                cwd={undefined}
+                className="mx-auto max-w-4xl px-6 py-5"
+              />
+            </ScrollArea>
+          </section>
+        </div>
+      </div>
     ) : (
       <ReadOnlySourcePreview name={props.name} text={content.text} />
     )
@@ -285,14 +321,29 @@ export function AttachmentFilePreview(props: {
         </div>
         {renderedMode ? (
           <FileSurfaceAction
-            label={renderedToggleLabel(renderedMode, rendered)}
-            pressed={rendered}
-            onPress={() => setRendered((value) => !value)}
+            label={renderedToggleLabel(renderedMode, rendered && !splitMarkdown)}
+            pressed={rendered && !splitMarkdown}
+            onPress={() => {
+              setRendered(splitMarkdown || !rendered);
+              setSplitMarkdown(false);
+            }}
           >
             <MorphIcon
               className="size-3.5"
-              icon={rendered ? Code2 : renderedMode === "table" ? Table2 : Eye}
+              icon={rendered && !splitMarkdown ? Code2 : renderedMode === "table" ? Table2 : Eye}
             />
+          </FileSurfaceAction>
+        ) : null}
+        {kind === "markdown" ? (
+          <FileSurfaceAction
+            label={splitMarkdown ? "Show only markdown source" : "Show markdown source and preview"}
+            pressed={splitMarkdown}
+            onPress={() => {
+              setSplitMarkdown(!splitMarkdown);
+              setRendered(!splitMarkdown);
+            }}
+          >
+            <Columns2 className="size-3.5" />
           </FileSurfaceAction>
         ) : null}
         {showsRawText ? (

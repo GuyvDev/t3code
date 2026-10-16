@@ -37,7 +37,7 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, Globe2, WrapTextIcon } from "lucide-react";
+import { Columns2, FolderTree, Globe2, WrapTextIcon } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -141,6 +141,7 @@ interface FilePreviewPanelProps {
 
 const FILE_EXPLORER_STORAGE_KEY = "t3code.fileExplorerOpen";
 const RENDER_MARKDOWN_STORAGE_KEY = "t3code.renderMarkdown";
+const SPLIT_MARKDOWN_STORAGE_KEY = "t3code.splitMarkdown";
 const RENDER_BROWSER_FILE_STORAGE_KEY = "t3code.renderBrowserFile";
 const RENDER_TABLE_STORAGE_KEY = "t3code.renderTable";
 type FilePostRender = <LAnnotation>(
@@ -1099,6 +1100,11 @@ export default function FilePreviewPanel({
     false,
     Schema.Boolean,
   );
+  const [splitMarkdownPreferred, setSplitMarkdownPreferred] = useLocalStorage(
+    SPLIT_MARKDOWN_STORAGE_KEY,
+    false,
+    Schema.Boolean,
+  );
   const [renderBrowserFilePreferred, setRenderBrowserFilePreferred] = useLocalStorage(
     RENDER_BROWSER_FILE_STORAGE_KEY,
     true,
@@ -1122,7 +1128,8 @@ export default function FilePreviewPanel({
   const revealHandled =
     revealLine === null ||
     (handledReveal?.path === relativePath && handledReveal.requestId === revealRequestId);
-  const renderMarkdown = isMarkdown && renderMarkdownPreferred && revealHandled;
+  const splitMarkdown = isMarkdown && splitMarkdownPreferred && revealHandled;
+  const renderMarkdown = isMarkdown && (renderMarkdownPreferred || splitMarkdown) && revealHandled;
   const renderBrowserFile = isPdf || (isHtml && renderBrowserFilePreferred && revealHandled);
   const renderTable = tableDelimiter !== null && renderTablePreferred && revealHandled;
   const renderedMode = isMarkdown
@@ -1138,7 +1145,7 @@ export default function FilePreviewPanel({
   const showsRawText =
     previewPath !== null &&
     file.data !== null &&
-    !(isMarkdown && renderMarkdown) &&
+    !(isMarkdown && renderMarkdown && !splitMarkdown) &&
     !(tableDelimiter && renderTable) &&
     !renderBrowserFile;
   const rendered = isMarkdown ? renderMarkdown : tableDelimiter ? renderTable : renderBrowserFile;
@@ -1239,6 +1246,34 @@ export default function FilePreviewPanel({
     threadRef,
   ]);
 
+  const sourcePreview =
+    relativePath && file.data ? (
+      file.data.truncated || isHostFile || !canWriteFiles ? (
+        <SourceFilePreview
+          name={relativePath}
+          text={file.data.contents}
+          cacheKey={projectFileCacheKey(cwd, relativePath, file.data.contents)}
+          onPostRender={onFilePostRender}
+        />
+      ) : (
+        <DiffWorkerPoolProvider>
+          <EditableFileSurface
+            key={`${relativePath}:${resolvedTheme}`}
+            environmentId={environmentId}
+            cwd={cwd}
+            relativePath={relativePath}
+            composerDraftTarget={composerDraftTarget}
+            contents={file.data.contents}
+            resolvedTheme={resolvedTheme}
+            revealRequestId={revealRequestId}
+            wordWrap={wordWrap}
+            onPostRender={onFilePostRender}
+            onPendingChange={onPendingChange}
+          />
+        </DiffWorkerPoolProvider>
+      )
+    ) : null;
+
   if (attachment === undefined && !canReadFiles) {
     if (fileAccess.isPending) {
       return (
@@ -1292,10 +1327,11 @@ export default function FilePreviewPanel({
           ) : null}
           {canToggleRendered && renderedMode ? (
             <FileSurfaceAction
-              label={renderedToggleLabel(renderedMode, rendered)}
-              pressed={rendered}
+              label={renderedToggleLabel(renderedMode, rendered && !splitMarkdown)}
+              pressed={rendered && !splitMarkdown}
               onPress={() => {
-                const pressed = !rendered;
+                const pressed = splitMarkdown || !rendered;
+                if (isMarkdown) setSplitMarkdownPreferred(false);
                 setRenderedPreferred(pressed);
                 setHandledReveal(
                   pressed && relativePath !== null
@@ -1306,8 +1342,28 @@ export default function FilePreviewPanel({
             >
               <MorphIcon
                 className="size-3.5"
-                icon={rendered ? Code2 : renderedMode === "table" ? Table2 : Eye}
+                icon={rendered && !splitMarkdown ? Code2 : renderedMode === "table" ? Table2 : Eye}
               />
+            </FileSurfaceAction>
+          ) : null}
+          {canToggleRendered && isMarkdown ? (
+            <FileSurfaceAction
+              label={
+                splitMarkdown ? "Show only markdown source" : "Show markdown source and preview"
+              }
+              pressed={splitMarkdown}
+              onPress={() => {
+                const pressed = !splitMarkdown;
+                setSplitMarkdownPreferred(pressed);
+                setRenderMarkdownPreferred(false);
+                setHandledReveal(
+                  pressed && relativePath !== null
+                    ? { path: relativePath, requestId: revealRequestId }
+                    : null,
+                );
+              }}
+            >
+              <Columns2 className="size-3.5" />
             </FileSurfaceAction>
           ) : null}
           {showsRawText ? (
@@ -1441,16 +1497,40 @@ export default function FilePreviewPanel({
             </div>
           ) : relativePath && file.data ? (
             isMarkdown && renderMarkdown ? (
-              <RenderedMarkdownSurface
-                key={relativePath}
-                environmentId={environmentId}
-                cwd={cwd}
-                relativePath={relativePath}
-                threadRef={threadRef}
-                contents={file.data.contents}
-                readOnly={isHostFile || !canWriteFiles}
-                onPendingChange={onPendingChange}
-              />
+              <div className="@container/markdown flex min-h-0 flex-1">
+                <div
+                  className={cn(
+                    "grid min-h-0 min-w-0 flex-1",
+                    splitMarkdown
+                      ? "grid-rows-2 @min-[48rem]/markdown:grid-cols-2 @min-[48rem]/markdown:grid-rows-1"
+                      : "grid-cols-1 grid-rows-1",
+                  )}
+                >
+                  {splitMarkdown ? (
+                    <section
+                      aria-label="Markdown source"
+                      className="flex min-h-0 min-w-0 flex-col overflow-hidden border-b @min-[48rem]/markdown:border-r @min-[48rem]/markdown:border-b-0"
+                    >
+                      {sourcePreview}
+                    </section>
+                  ) : null}
+                  <section
+                    aria-label="Rendered markdown"
+                    className="flex min-h-0 min-w-0 flex-col overflow-hidden"
+                  >
+                    <RenderedMarkdownSurface
+                      key={relativePath}
+                      environmentId={environmentId}
+                      cwd={cwd}
+                      relativePath={relativePath}
+                      threadRef={threadRef}
+                      contents={file.data.contents}
+                      readOnly={file.data.truncated || isHostFile || !canWriteFiles}
+                      onPendingChange={onPendingChange}
+                    />
+                  </section>
+                </div>
+              </div>
             ) : tableDelimiter && renderTable ? (
               <DelimitedTablePreview
                 key={relativePath}
@@ -1458,29 +1538,8 @@ export default function FilePreviewPanel({
                 text={file.data.contents}
                 delimiter={tableDelimiter}
               />
-            ) : file.data.truncated || isHostFile || !canWriteFiles ? (
-              <SourceFilePreview
-                name={relativePath}
-                text={file.data.contents}
-                cacheKey={projectFileCacheKey(cwd, relativePath, file.data.contents)}
-                onPostRender={onFilePostRender}
-              />
             ) : (
-              <DiffWorkerPoolProvider>
-                <EditableFileSurface
-                  key={`${relativePath}:${resolvedTheme}`}
-                  environmentId={environmentId}
-                  cwd={cwd}
-                  relativePath={relativePath}
-                  composerDraftTarget={composerDraftTarget}
-                  contents={file.data.contents}
-                  resolvedTheme={resolvedTheme}
-                  revealRequestId={revealRequestId}
-                  wordWrap={wordWrap}
-                  onPostRender={onFilePostRender}
-                  onPendingChange={onPendingChange}
-                />
-              </DiffWorkerPoolProvider>
+              sourcePreview
             )
           ) : null}
         </div>
