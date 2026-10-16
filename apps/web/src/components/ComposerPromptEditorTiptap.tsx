@@ -1,3 +1,4 @@
+import { ComposerTextDirectionExtension } from "./composerTextDirection";
 import { formatProviderSkillDisplayName } from "@t3tools/shared/inlineSkills";
 import {
   Extension,
@@ -997,6 +998,7 @@ function ComposerPromptEditorTiptapInner(props: ComposerPromptEditorProps) {
   const editor = useEditor(
     {
       extensions: [
+        ComposerTextDirectionExtension,
         StarterKit.configure({
           blockquote: false,
           bulletList: false,

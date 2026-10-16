@@ -1,4 +1,5 @@
 import { File, type FileOptions, Virtualizer } from "@pierre/diffs/react";
+import { useCallback } from "react";
 
 import { DiffWorkerPoolProvider } from "~/components/DiffWorkerPoolProvider";
 import { useClientSettings } from "~/hooks/useSettings";
@@ -7,6 +8,7 @@ import { resolveDiffThemeName } from "~/lib/diffRendering";
 import { PREFERRED_HIGHLIGHTER } from "~/lib/syntaxHighlighting";
 
 import { FILE_LINK_REVEAL_UNSAFE_CSS } from "./fileSurfaceChrome";
+import { disposeFileTextDirection, updateFileTextDirection } from "./fileTextDirection";
 
 export default function ReadOnlySourcePreview(props: {
   readonly name: string;
@@ -16,6 +18,14 @@ export default function ReadOnlySourcePreview(props: {
 }) {
   const { resolvedTheme } = useTheme();
   const wordWrap = useClientSettings((settings) => settings.wordWrap);
+  const onPostRender = useCallback<NonNullable<FileOptions<unknown, undefined>["onPostRender"]>>(
+    (container, instance, phase) => {
+      if (phase === "unmount") disposeFileTextDirection(container);
+      else updateFileTextDirection(container, instance.file?.contents ?? "", props.name);
+      props.onPostRender?.(container, instance, phase);
+    },
+    [props.name, props.onPostRender],
+  );
   return (
     <DiffWorkerPoolProvider>
       <Virtualizer
@@ -36,7 +46,7 @@ export default function ReadOnlySourcePreview(props: {
             preferredHighlighter: PREFERRED_HIGHLIGHTER,
             themeType: resolvedTheme,
             unsafeCSS: FILE_LINK_REVEAL_UNSAFE_CSS,
-            ...(props.onPostRender ? { onPostRender: props.onPostRender } : {}),
+            onPostRender,
           }}
           className="min-h-full"
         />

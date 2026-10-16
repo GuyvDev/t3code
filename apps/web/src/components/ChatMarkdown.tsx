@@ -1,3 +1,4 @@
+import { rehypeTextDirection } from "../markdownTextDirection";
 import { MarkdownFindContext, useFindRevealRef } from "./chat/markdownFindContext";
 import {
   buildFileLinkParentSuffixByPath,
@@ -749,6 +750,7 @@ export function MarkdownCodeBlockFrame({
   return (
     <Wrapper
       className="chat-markdown-codeblock my-[0.65rem] overflow-hidden rounded-lg border border-border/70 bg-secondary leading-snug dark:border-transparent dark:bg-input/32"
+      dir="ltr"
       data-language={language}
       data-wrap={wrapped ? "true" : "false"}
     >
@@ -1803,11 +1805,13 @@ function rehypeHeadingIds() {
 const CHAT_MARKDOWN_RENDER_REHYPE_PLUGINS = [
   ...CHAT_MARKDOWN_REHYPE_PLUGINS,
   rehypeHeadingIds,
+  rehypeTextDirection,
 ] satisfies NonNullable<ReactMarkdownOptions["rehypePlugins"]>;
 
-const CHAT_MARKDOWN_LITERAL_HTML_REHYPE_PLUGINS = [rehypeHeadingIds] satisfies NonNullable<
-  ReactMarkdownOptions["rehypePlugins"]
->;
+const CHAT_MARKDOWN_LITERAL_HTML_REHYPE_PLUGINS = [
+  rehypeHeadingIds,
+  rehypeTextDirection,
+] satisfies NonNullable<ReactMarkdownOptions["rehypePlugins"]>;
 
 function MarkdownExternalLinkContent({
   host,

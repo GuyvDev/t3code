@@ -88,6 +88,7 @@ import {
   normalizeFileCommentRange,
   remapFileCommentAnnotations,
 } from "./fileCommentAnnotations";
+import { disposeFileTextDirection, updateFileTextDirection } from "./fileTextDirection";
 import { installFileEditorDismissal } from "./fileEditorDismissal";
 import {
   FILE_LINK_REVEAL_ATTRIBUTE,
@@ -449,6 +450,7 @@ function useFileLineReveal(
       };
 
       if (phase === "unmount") {
+        disposeFileTextDirection(fileContainer);
         cancelPendingReveal();
         return;
       }
@@ -457,6 +459,7 @@ function useFileLineReveal(
       const targetLine =
         revealLine === null || contents === undefined ? null : clampFileLine(contents, revealLine);
       updateFileLinkReveal(fileContainer, targetLine);
+      updateFileTextDirection(fileContainer, contents ?? "", instance.file?.name ?? "");
 
       if (!(instance instanceof VirtualizedFile)) return;
 
