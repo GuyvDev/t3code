@@ -297,6 +297,9 @@ files show the copy that was attached to the message.
 
 ## Attached files
 
+Rendered Markdown files on web and desktop support LaTeX math: `$...$` for
+inline formulas, or `$$...$$` on separate lines for display formulas.
+
 Select a file chip in your draft or a sent message to preview it. Code and JSON use syntax
 highlighting; Markdown, HTML, CSV, and TSV offer rendered and raw views. Audio files have
 playback controls. Large text files show a limited preview; save the file to read it in full.

@@ -16,6 +16,7 @@ import { getSyntaxHighlighterPromise } from "../lib/syntaxHighlighting";
 import { GitHubIcon } from "./Icons";
 import { Button } from "./ui/button";
 import { setMarkdownTaskChecked } from "./files/filePreviewMode";
+import { MARKDOWN_MATH_REHYPE_PLUGINS, MARKDOWN_MATH_REMARK_PLUGINS } from "./files/markdownMath";
 
 vi.mock("../hooks/useFileMetadata", () => ({ useFileMetadata: () => null }));
 vi.mock("@effect/atom-react", () => ({ useAtomValue: () => null }));
@@ -86,6 +87,76 @@ import ChatMarkdown, {
   hasMarkdownFilePrimaryAction,
   shouldUseMarkdownFileBrowserPrimaryAction,
 } from "./ChatMarkdown";
+
+describe("Markdown file math rendering", () => {
+  it("renders inline and block LaTeX alongside tables and RTL prose", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(
+          <ChatMarkdown
+            cwd="/tmp/project"
+            text={[
+              "שלום בעולם $E=mc^2$",
+              "",
+              "$$",
+              "\\frac{a}{b} + \\sqrt{x}",
+              "$$",
+              "",
+              "| תיאור | Value |",
+              "| --- | --- |",
+              "| מחיר | $x^2$ |",
+            ].join("\n")}
+            extraRemarkPlugins={MARKDOWN_MATH_REMARK_PLUGINS}
+            extraRehypePlugins={MARKDOWN_MATH_REHYPE_PLUGINS}
+          />,
+        );
+      });
+      expect(container.querySelectorAll("math")).toHaveLength(3);
+      expect(container.querySelectorAll(".katex-display")).toHaveLength(1);
+      expect(container.querySelector("mfrac")).not.toBeNull();
+      expect(container.querySelector("msqrt")).not.toBeNull();
+      expect(container.querySelector("tbody td")?.textContent).toBe("מחיר");
+    } finally {
+      await act(async () => root.unmount());
+      container.remove();
+    }
+  });
+
+  it("keeps hostile HTML and untrusted TeX inert and tolerates invalid formulas", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(
+          <ChatMarkdown
+            cwd="/tmp/project"
+            text={[
+              '<img src="x" onerror="alert(1)"><script>alert(1)</script>',
+              "",
+              "$\\href{javascript:alert(1)}{unsafe}$",
+              "",
+              "$\\htmlStyle{background:url(javascript:alert(1))}{unsafe}$",
+              "",
+              "$\\notARealCommand{x}$",
+              "",
+              "Document continues.",
+            ].join("\n")}
+            extraRemarkPlugins={MARKDOWN_MATH_REMARK_PLUGINS}
+            extraRehypePlugins={MARKDOWN_MATH_REHYPE_PLUGINS}
+          />,
+        );
+      });
+      expect(container.querySelector("script, [onerror], a[href^='javascript:']")).toBeNull();
+      expect(container.querySelector("[style*='background']")).toBeNull();
+      expect(container.textContent).toContain("Document continues.");
+    } finally {
+      await act(async () => root.unmount());
+    }
+  });
+});
 
 function codeButton(renderer: ReactTestRenderer, label: string) {
   const button = renderer.root

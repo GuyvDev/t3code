@@ -1775,6 +1775,19 @@ code {
   margin-bottom: 0;
 }
 
+.chat-markdown .katex {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-indent: 0;
+}
+
+.chat-markdown .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
 .chat-markdown p,
 .chat-markdown ul,
 .chat-markdown ol,

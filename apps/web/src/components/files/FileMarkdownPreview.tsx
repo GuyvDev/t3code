@@ -2,6 +2,8 @@ import type { ScopedThreadRef } from "@t3tools/contracts";
 
 import ChatMarkdown from "~/components/ChatMarkdown";
 import { resolvePathLinkTarget } from "@t3tools/shared/fileLinks";
+import { MARKDOWN_MATH_REHYPE_PLUGINS, MARKDOWN_MATH_REMARK_PLUGINS } from "./markdownMath";
+import "katex/dist/katex.min.css";
 
 export function FileMarkdownPreview(props: {
   readonly cwd: string;
@@ -28,6 +30,8 @@ export function FileMarkdownPreview(props: {
       imageBaseDir={imageBaseDir}
       threadRef={props.threadRef}
       className="mx-auto max-w-4xl px-6 py-5"
+      extraRemarkPlugins={MARKDOWN_MATH_REMARK_PLUGINS}
+      extraRehypePlugins={MARKDOWN_MATH_REHYPE_PLUGINS}
       onTaskListChange={props.onTaskListChange}
     />
   );

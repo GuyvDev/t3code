@@ -19,6 +19,8 @@ import { cn } from "~/lib/utils";
 import { AudioPreview } from "./AudioPreview";
 import { BrowserDocumentFrame } from "./BrowserDocumentFrame";
 import { DelimitedTablePreview } from "./DelimitedTablePreview";
+import { MARKDOWN_MATH_REHYPE_PLUGINS, MARKDOWN_MATH_REMARK_PLUGINS } from "./markdownMath";
+import "katex/dist/katex.min.css";
 import {
   FILE_SURFACE_SUBHEADER_CLASS,
   FileSurfaceAction,
@@ -220,7 +222,13 @@ export function AttachmentFilePreview(props: {
       <DelimitedTablePreview name={props.name} text={content.text} delimiter={delimiter} />
     ) : kind === "markdown" && rendered ? (
       <ScrollArea className="min-h-0 flex-1">
-        <ChatMarkdown text={content.text} cwd={undefined} className="mx-auto max-w-4xl px-6 py-5" />
+        <ChatMarkdown
+          text={content.text}
+          cwd={undefined}
+          className="mx-auto max-w-4xl px-6 py-5"
+          extraRemarkPlugins={MARKDOWN_MATH_REMARK_PLUGINS}
+          extraRehypePlugins={MARKDOWN_MATH_REHYPE_PLUGINS}
+        />
       </ScrollArea>
     ) : (
       <ReadOnlySourcePreview name={props.name} text={content.text} />
