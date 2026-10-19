@@ -2064,11 +2064,6 @@ code {
   text-align: center;
 }
 
-.chat-markdown th [data-text-direction],
-.chat-markdown td [data-text-direction] {
-  text-align: inherit;
-}
-
 .chat-markdown thead th {
   border-bottom: 1px solid color-mix(in srgb, var(--contrast-border) 60%, transparent);
   padding-block: 0.55rem;
